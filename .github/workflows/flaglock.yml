@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       max-parallel: 6
       matrix:
-        include: [{"id":"v38v6-101","jar":"fl38v6.jar","seeds":"101,102,103,104","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v38v6-105","jar":"fl38v6.jar","seeds":"105,106,107,108","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v38v6-109","jar":"fl38v6.jar","seeds":"109,110,111,112","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v43a-101","jar":"fl43a.jar","seeds":"101,102,103,104","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v43a-105","jar":"fl43a.jar","seeds":"105,106,107,108","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v43a-109","jar":"fl43a.jar","seeds":"109,110,111,112","rooms":8,"spec":"0.05|40ms 10ms|"}]
+        include: [{"id":"v38v6-101","jar":"fl38v6.jar","seeds":"101,102,103,104","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v38v6-105","jar":"fl38v6.jar","seeds":"105,106,107,108","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v38v6-109","jar":"fl38v6.jar","seeds":"109,110,111,112","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v43c-101","jar":"fl43c.jar","seeds":"101,102,103,104","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v43c-105","jar":"fl43c.jar","seeds":"105,106,107,108","rooms":8,"spec":"0.05|40ms 10ms|"},{"id":"v43c-109","jar":"fl43c.jar","seeds":"109,110,111,112","rooms":8,"spec":"0.05|40ms 10ms|"}]
     env:
       K: ${{ secrets.K }}
     steps:
