@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       max-parallel: 7
       matrix:
-        include: [{"id":"s12-b1","jar":"seq12v6.jar","seeds":"b1.txt","maxmin":"150","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real"},{"id":"s12-b2","jar":"seq12v6.jar","seeds":"b2.txt","maxmin":"150","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real"},{"id":"s12-b3","jar":"seq12v6.jar","seeds":"b3.txt","maxmin":"150","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real"},{"id":"s12-b4","jar":"seq12v6.jar","seeds":"b4.txt","maxmin":"150","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real"},{"id":"s12-b5","jar":"seq12v6.jar","seeds":"b5.txt","maxmin":"150","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real --scenarios"},{"id":"s12-b6","jar":"seq12v6.jar","seeds":"b6.txt","maxmin":"150","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real --scenarios"},{"id":"s12-b7","jar":"seq12v6.jar","seeds":"b7.txt","maxmin":"150","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real --scenarios"}]
+        include: [{"id":"base","jar":"fl38v6.jar","seeds":"101","rooms":1,"spec":"0.05|40ms 10ms|"}]
     env:
       K: ${{ secrets.K }}
     steps:
