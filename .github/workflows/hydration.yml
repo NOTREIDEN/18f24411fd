@@ -1,0 +1,36 @@
+name: hydration
+on:
+  push:
+    branches: ["run/hydration-**"]
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 7
+      matrix:
+        include: [{"id":"smoke","jar":"seq12v6.jar","seeds":"smoke.txt","maxmin":"25","extra":"--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real"}]
+    env:
+      K: ${{ secrets.K }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '8'}
+      - name: deps
+        run: sudo apt-get update -qq >/dev/null && sudo apt-get install -y -qq xvfb openbox imagemagick x11-xserver-utils libgl1-mesa-dri libxrandr2 libxxf86vm1 libopenal1 >/dev/null 2>&1; echo ok
+      - name: setup
+        run: |
+          sh setup.sh >/dev/null
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:K < o/hydration.tgz.enc | tar -xz -C w
+      - name: run
+        run: |
+          C=$PWD/w/proyectos/hydration-close-2026-10-09/ci-2026-11-05
+          JAVA8=$JAVA_HOME/bin/java bash $C/job.sh $C/jars/${{ matrix.jar }} $C/seeds/${{ matrix.seeds }} $RUNNER_TEMP/out ${{ matrix.maxmin }} "${{ matrix.extra }}" >/dev/null 2>&1 || true
+          ls $RUNNER_TEMP/out | wc -l
+      - name: pack
+        if: always()
+        run: tar -czf - -C $RUNNER_TEMP out 2>/dev/null | openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:K > res.enc
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: "r-${{ matrix.id }}", path: res.enc}
