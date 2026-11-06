@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        include: [{"id": "seq16c-b15H", "jar": "seq16cv6.jar", "seeds": "b15.txt", "maxmin": "150", "extra": "--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real --realmsgs --vdelay 5 --botchat 300 --hold 900"}, {"id": "seq16c-b4H", "jar": "seq16cv6.jar", "seeds": "b4.txt", "maxmin": "150", "extra": "--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real --realmsgs --vdelay 5 --botchat 300 --hold 900"}]
+        include: [{"id": "seq16g-b8S", "jar": "seq16gv6.jar", "seeds": "b8.txt", "maxmin": "150", "extra": "--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real --realmsgs --vdelay 5 --botchat 300 --scenarios"}, {"id": "seq16g-b10S", "jar": "seq16gv6.jar", "seeds": "b10.txt", "maxmin": "150", "extra": "--real --lock 100 --bots 2 --botflip 1500 --gui 900,40 --timeout_s 180 --rule real --realmsgs --vdelay 5 --botchat 300 --scenarios"}]
     env:
       K: ${{ secrets.K }}
     steps:
