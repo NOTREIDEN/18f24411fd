@@ -3,3 +3,4 @@ haxball-core==1.0.0
 haxballgym==1.0.1
 pillow>=11,<14
 pytest>=8,<10
+imageio-ffmpeg>=0.6,<0.7

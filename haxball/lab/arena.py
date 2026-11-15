@@ -25,29 +25,42 @@ class Arena:
         """Only call at a batch boundary: set_state resets ALL hidden kick states."""
         hx,hy=self.spec.half
         bp=self.rng.uniform([-hx*.65,-hy*.7],[hx*.65,hy*.7],(self.n,2))
+        # Deliberate wall-escape drills, with room for the PLAYER outside the
+        # ball-only boundary. These are real legal states of the selected map.
+        wall_case=self.rng.random(self.n)<.25
+        bp[wall_case,1]=self.rng.choice([-1,1],int(wall_case.sum()))*(hy-self.spec.ball_radius-2)
         bv=self.rng.normal(0,.6,(self.n,2))
         pp=self.rng.uniform([-hx*.85,-hy*.8],[hx*.85,hy*.8],(self.n,self.p,2))
         pv=self.rng.normal(0,.25,(self.n,self.p,2))
         # Distribute roles while retaining contact-rich starts for the learning slot.
         for i in range(self.p):
             for _ in range(6):
-                if i==0:break
                 d=np.linalg.norm(pp[:,i,None]-pp[:,:i],axis=-1)
-                bad=(d<2*self.spec.player_radius+3).any(-1)
+                bad=(d<2*self.spec.player_radius+3).any(-1)|(np.linalg.norm(pp[:,i]-bp,axis=-1)<self.spec.player_radius+self.spec.ball_radius+3)
                 if not bad.any():break
                 pp[bad,i]=self.rng.uniform([-hx*.85,-hy*.8],[hx*.85,hy*.8],(int(bad.sum()),2))
         rows=np.arange(self.n);side=np.where(self.state.team[rows,self.egos]==2,1.,-1.)
-        contact=self.rng.random(self.n)<.55
+        contact=(self.rng.random(self.n)<.55)|wall_case
         offset=self.rng.uniform(29,100,self.n)
         angles=self.rng.uniform(-np.pi,np.pi,self.n)
         around=np.stack([np.cos(angles),np.sin(angles)],-1)*offset[:,None]
         pp[rows[contact],self.egos[contact]]=bp[contact]+around[contact]
-        np.clip(pp,-self.spec.half+self.spec.player_radius+5,self.spec.half-self.spec.player_radius-5,out=pp)
+        player_half=self.spec.player_half if self.spec.player_half is not None else self.spec.half
+        np.clip(pp,-player_half+self.spec.player_radius+3,player_half-self.spec.player_radius-3,out=pp)
+        # Reject impossible overlaps introduced by placing the selected learner.
+        for _ in range(12):
+            mine=pp[rows,self.egos]
+            d=np.linalg.norm(pp-mine[:,None],axis=-1);d[rows,self.egos]=1e9
+            bad=(d<2*self.spec.player_radius+2).any(-1)|(np.linalg.norm(mine-bp,axis=-1)<self.spec.player_radius+self.spec.ball_radius+2)
+            if not bad.any():break
+            angle=self.rng.uniform(-np.pi,np.pi,int(bad.sum()));off=self.rng.uniform(28,110,int(bad.sum()))
+            pp[rows[bad],self.egos[bad]]=bp[bad]+np.stack([np.cos(angle),np.sin(angle)],-1)*off[:,None]
+            np.clip(pp,-player_half+self.spec.player_radius+3,player_half-self.spec.player_radius-3,out=pp)
         self.state=self.engine.set_state(bp,bv,pp,pv)
         self.age[:]=0;self.previous[:]=0;self.tracker.reset_mask(np.ones(self.n,dtype=bool))
 
-    def obs(self):
-        return encode(self.state,self.spec,self.egos,self.previous)
+    def obs(self,observation_revision='player-geometry-v2'):
+        return encode(self.state,self.spec,self.egos,self.previous,observation_revision)
 
     def potential(self,state):
         row=np.arange(self.n);teams=state.team[row,self.egos]

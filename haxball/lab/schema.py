@@ -35,6 +35,9 @@ class FieldSpec:
     kicking_damping: float = .96
     ball_gravity: tuple = (0.,0.)
     kickback: float = 0.
+    player_half: np.ndarray | None = None
+    player_walls: np.ndarray | None = None
+    player_obstacles: np.ndarray | None = None
 
     @property
     def max_speed(self):
@@ -55,15 +58,48 @@ class FieldSpec:
         pts = np.asarray(state.walls).reshape(-1, 2)
         useful = pts[np.abs(pts).max(axis=1) < 2999]
         half = np.maximum(np.abs(useful if len(useful) else pts).max(axis=0), 50.0)
+        traits=raw.get('traits') or {}
+        if not isinstance(traits,dict):traits={}
+        def props(item):return {**traits.get(item.get('trait'),{}),**item}
+        flags={'ball':1,'red':2,'blue':4,'redKO':8,'blueKO':16,'wall':32,'all':63,'kick':64,'score':128}
+        def bits(value,default):
+            if value is None:return default
+            result=0
+            for x in value:result |= flags.get(x,0)
+            return result
+        def player_collides(item):
+            item=props(item)
+            return bool(bits(item.get('cMask'),63)&6 and bits(item.get('cGroup'),32)&39)
+        player_half=np.full(2,np.inf)
+        walls=[];obstacles=[]
+        for plane in raw.get('planes',[]):
+            if not player_collides(plane):continue
+            normal=np.asarray(plane['normal'],dtype=float);dist=float(plane['dist'])
+            if abs(normal[0])>1e-8 and abs(normal[1])<1e-8:player_half[0]=min(player_half[0],abs(dist/normal[0]))
+            if abs(normal[1])>1e-8 and abs(normal[0])<1e-8:player_half[1]=min(player_half[1],abs(dist/normal[1]))
+        player_half=np.where(np.isfinite(player_half),player_half,half+30)
+        hx,hy=player_half
+        walls.extend([[-hx,-hy,hx,-hy],[hx,-hy,hx,hy],[hx,hy,-hx,hy],[-hx,hy,-hx,-hy]])
+        vertices=raw.get('vertexes',[])
+        for segment in raw.get('segments',[]):
+            if player_collides(segment):
+                a,b=vertices[segment['v0']],vertices[segment['v1']]
+                walls.append([a['x'],a['y'],b['x'],b['y']])
+        ball_index=int(raw.get('ballPhysics','')[4:]) if isinstance(raw.get('ballPhysics'),str) and raw['ballPhysics'].startswith('disc') else -1
+        for i,disc in enumerate(raw.get('discs',[])):
+            d=props(disc)
+            if i==ball_index or d.get('invMass',1)!=0 or not player_collides(d):continue
+            pos=d.get('pos',[0,0]);obstacles.append([pos[0],pos[1],d.get('radius',10)])
         return cls(name, half, float(pp.get('radius', 15)), float(bp.get('radius', 10)),
                    float(pp.get('acceleration', .1)), float(pp.get('damping', .96)),
                    float(bp.get('damping', .99)), float(pp.get('kickStrength', 5)),
                    float(bp.get('invMass',1)),float(bp.get('bCoef',.5)),float(pp.get('bCoef',.5)),
                    float(pp.get('kickingAcceleration',.07)),float(pp.get('kickingDamping',.96)),
-                   tuple(bp.get('gravity',[0.,0.])),float(pp.get('kickback',0)))
+                   tuple(bp.get('gravity',[0.,0.])),float(pp.get('kickback',0)),
+                   player_half,np.asarray(walls,dtype=float),np.asarray(obstacles,dtype=float).reshape(-1,3))
 
     def as_dict(self):
-        return {**self.__dict__, 'half': self.half.tolist(), 'max_speed': self.max_speed}
+        return {**{k:v.tolist() if isinstance(v,np.ndarray) else v for k,v in self.__dict__.items()}, 'max_speed': self.max_speed}
 
 
 def action_indices(world_actions, teams):
@@ -78,24 +114,24 @@ def decode_actions(indices, teams):
     return out
 
 
-def _rays(origins, state, scale):
+def _rays(origins, state, scale,walls=None,obstacles=None):
     shape = origins.shape[:-1]
     o = origins.reshape(-1, 2)
     ang = np.arange(8)*np.pi/4
     dirs = np.broadcast_to(np.stack([np.cos(ang), np.sin(ang)], -1), (len(o), 8, 2))
-    walls = np.asarray(state.walls)
+    walls = np.asarray(state.walls if walls is None else walls)
     cap = float(2*np.linalg.norm(scale))
     if len(walls):
         result = GeoObs._raycast(o, dirs, walls[:, :2], walls[:, 2:], cap)
     else:
         result = np.ones((len(o), 8))
-    obs = np.asarray(state.obstacles)
+    obs = np.asarray(state.obstacles if obstacles is None else obstacles)
     if len(obs):
         result = np.minimum(result, GeoObs._raycast_discs(o, dirs, obs[:, :2], obs[:, 2], cap))
     return result.reshape(*shape, 8)
 
 
-def encode(state, spec: FieldSpec, egos=None, previous_actions=None):
+def encode(state, spec: FieldSpec, egos=None, previous_actions=None,observation_revision='player-geometry-v2'):
     """Return arrays (B,60), (B,P,10), (B,P), with B=N*number of chosen egos.
 
     ``egos`` is (N,) or (N,L). Absent means every player. Entity P is truly
@@ -148,7 +184,7 @@ def encode(state, spec: FieldSpec, egos=None, previous_actions=None):
     # Rays in world frame; reorder, rather than negate distances, for blue.
     ball_rays = _rays(state.ball_pos, state, half)
     br = np.broadcast_to(ball_rays[:, None], (*egos.shape, 8))
-    er = _rays(ep, state, half)
+    er = _rays(ep,state,half) if observation_revision=='ball-geometry-v1' else _rays(ep, state, half,spec.player_walls,spec.player_obstacles)
     flip = np.array([4, 3, 2, 1, 0, 7, 6, 5])
     ego[..., 22:30] = np.where((side < 0)[..., None], br[..., flip], br)
     ego[..., 30:38] = np.where((side < 0)[..., None], er[..., flip], er)

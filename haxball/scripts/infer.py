@@ -53,7 +53,7 @@ class Worker:
         if self.spec is None:self.spec=FieldSpec.from_raw(state,self.raw)
         ego=ids.index(msg['playerId'])
         if self.model:
-            obs=encode(state,self.spec,np.array([ego]),self.previous)
+            obs=encode(state,self.spec,np.array([ego]),self.previous,self.model.observation_revision)
             a,_,_,self.hidden=self.model.act(obs,self.hidden,deterministic=True)
             action=decode_actions(a.numpy(),teams[:,ego])[0]
         else:action=baseline_actions(state,self.spec,previous_actions=self.previous)[0,ego]

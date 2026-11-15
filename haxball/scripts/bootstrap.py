@@ -16,6 +16,7 @@ def run(seconds=180,output='runs/bootstrap.pt',seed=0,n_envs=64,initial=None):
     torch.set_num_threads(max(1,min(3,int(os.getenv('TORCH_NUM_THREADS','2')))))
     torch.manual_seed(seed);rng=np.random.default_rng(seed)
     model=load_checkpoint(initial)[0] if initial else Policy();opt=torch.optim.Adam(model.parameters(),lr=5e-4)
+    model.observation_revision='player-geometry-v2'
     start=time.monotonic();updates=0;samples=0;ema=None
     formats=[(1,futsal_for(1)),(2,futsal_for(2)),(3,futsal_for(3)),(5,futsal_for(5)),(10,futsal_for(10)),(12,futsal_for(12)),(3,'futsal-classic'),(1,'classic')]
     arenas={};log=[]

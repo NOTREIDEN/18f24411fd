@@ -100,7 +100,8 @@ def baseline_actions(state, spec: FieldSpec, style='balanced',previous_actions=N
     ds = np.linalg.norm(diff, axis=-1)
     repel = (_unit(diff)*np.where(same & ~eye, np.clip(60-ds,0,60)/60,0)[...,None]).sum(-2)*30
     desired += np.where(active[...,None],0,repel)
-    desired = np.clip(desired,-spec.half+spec.player_radius+3,spec.half-spec.player_radius-3)
+    player_half=spec.player_half if spec.player_half is not None else spec.half
+    desired = np.clip(desired,-player_half+spec.player_radius+3,player_half-spec.player_radius-3)
     # Velocity-aware steering avoids jitter/overshoot near the contact location.
     delta = desired-pp-pv*7
     dominant = np.abs(delta).max(-1, keepdims=True)

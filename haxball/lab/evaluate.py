@@ -35,7 +35,7 @@ def _leg(model,size,stadium,seed,n_envs,ticks,style,random_start):
             own=baseline_actions(env.state,env.spec,'balanced',env.previous)
             ids=action_indices(own,env.state.team)[np.arange(n_envs),fixed]
         else:
-            a,_,_,h=model.act(env.obs(),h,deterministic=True);ids=a.cpu().numpy()
+            a,_,_,h=model.act(env.obs(model.observation_revision),h,deterministic=True);ids=a.cpu().numpy()
         from .schema import decode_actions
         reference[np.arange(n_envs),fixed]=decode_actions(ids,env.state.team[np.arange(n_envs),fixed])
         history=[reference,history[0],history[1]]

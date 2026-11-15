@@ -44,7 +44,7 @@ def collect(env,model,horizon,hidden,rng,shadow=None,style='balanced',style_weig
             if full_opponents:
                 opposite=opposite[:,None]+np.arange(env.team_size)[None]
             # Historical policies sometimes control the WHOLE opposing team.
-            opponent_obs=encode(env.state,env.spec,opposite,env.previous)
+            opponent_obs=encode(env.state,env.spec,opposite,env.previous,shadow.observation_revision)
             oa,_,_,shadow_h=shadow.act(opponent_obs,shadow_h)
             if full_opponents:
                 rr=np.broadcast_to(rows[:,None],opposite.shape)
@@ -135,12 +135,15 @@ def train(args):
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True);league=out/'league';league.mkdir(exist_ok=True)
     if args.initial:model,initial=load_checkpoint(args.initial)
     else:model,initial=Policy(),{}
+    model.observation_revision='player-geometry-v2'
     model.train();opt=torch.optim.Adam(model.parameters(),lr=args.lr,eps=1e-5)
     guard=ProgressGuard(patience=4)
     start=time.monotonic();last_eval=start;last_save=start;last_video=start
     samples=int(initial.get('samples',0)) if args.resume else 0
     iteration=int(initial.get('iteration',0)) if args.resume else 0
-    if args.resume and 'optimizer' in initial:opt.load_state_dict(initial['optimizer'])
+    if args.resume and initial.get('phase')=='ppo' and 'optimizer' in initial:
+        opt.load_state_dict(initial['optimizer'])
+        for group in opt.param_groups:group['lr']=args.lr
     if args.resume and 'numpy_rng_state' in initial:rng.bit_generator.state=initial['numpy_rng_state']
     if args.resume and 'torch_rng_state' in initial:torch.set_rng_state(initial['torch_rng_state'])
     style_weight=1.;entropy=.012;format_weights=np.array([.3,.25,.15,.15,.15])
@@ -225,13 +228,16 @@ def train(args):
                 memories.clear()
                 emit({'event':'automatic_intervention','action':decision['intervention'],'format_weights':format_weights.tolist(),'entropy':entropy})
             last_eval=time.monotonic()
-        if now-last_video>=1200:
+        if now-last_video>=args.video_interval:
             # A bounded child evaluates the ACTUAL saved checkpoint and emits its clip.
             import subprocess
-            checkpoint=out/'champion.pt'
+            video_checkpoint=out/'champion.pt'
             dest=out/f'progress-{iteration:06d}.mp4'
-            subprocess.run([sys.executable,str(Path(__file__).with_name('render_progress.py')),'--checkpoint',str(checkpoint),'--output',str(dest),'--seconds','12'],check=True)
-            emit({'event':'video','path':str(dest),'checkpoint':str(checkpoint)})
+            try:
+                subprocess.run([sys.executable,str(Path(__file__).with_name('render_progress.py')),'--checkpoint',str(video_checkpoint),'--output',str(dest),'--seconds','12'],check=True,timeout=180)
+                emit({'event':'video','path':str(dest),'checkpoint':str(video_checkpoint)})
+            except (subprocess.SubprocessError,OSError) as error:
+                emit({'event':'video_warning','error':str(error),'training_continues':True})
             last_video=time.monotonic()
     checkpoint(out/'latest.pt')
     emit({'event':'complete','last_evaluation':last_report,'champion':str(out/'champion.pt')})
@@ -242,5 +248,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--seconds',type=float,default=10800);p.add_argument('--initial');p.add_argument('--output',default='runs/main');p.add_argument('--seed',type=int,default=0)
     p.add_argument('--envs',type=int,default=64);p.add_argument('--horizon',type=int,default=128);p.add_argument('--sequence',type=int,default=16);p.add_argument('--epochs',type=int,default=2);p.add_argument('--threads',type=int,default=2);p.add_argument('--tick-skip',type=int,default=2);p.add_argument('--lr',type=float,default=2e-4)
     p.add_argument('--eval-interval',type=float,default=180);p.add_argument('--eval-envs',type=int,default=8);p.add_argument('--eval-seconds',type=int,default=20)
-    p.add_argument('--resume',action='store_true');p.add_argument('--anchor-coef',type=float,default=.04);p.add_argument('--role',choices=['main','exploiter'],default='main')
+    p.add_argument('--video-interval',type=float,default=1200);p.add_argument('--resume',action='store_true');p.add_argument('--anchor-coef',type=float,default=.04);p.add_argument('--role',choices=['main','exploiter'],default='main')
     train(p.parse_args())

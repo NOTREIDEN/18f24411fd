@@ -54,6 +54,7 @@ jobs:
       - name: Validate physics, policy contract, and regression gates
         working-directory: haxball
         run: |
+          python -c "from imageio_ffmpeg import get_ffmpeg_exe; import subprocess; subprocess.run([get_ffmpeg_exe(), '-version'], check=True, stdout=subprocess.DEVNULL)"
           python -m pytest -q
           HAXBALL_PYTHON=python HAXBALL_CHECKPOINT=assets/bootstrap.pt node scripts/client_selftest.cjs
       - name: Train, share opponents, and publish progress

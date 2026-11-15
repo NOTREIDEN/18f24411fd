@@ -23,7 +23,7 @@ async function publishPeer(record){
  fs.writeFileSync(path.join(dir,'metadata.json'),JSON.stringify({seed,run,iteration:record.iteration,samples:record.samples}));
  const prefix=`peer-${seed}-`;
  await upload(prefix+record.iteration,[copy,path.join(dir,'metadata.json')]);
- const old=listArtifacts().filter(a=>a.name.startsWith(prefix)).sort((a,b)=>b.id-a.id);
+ const old=listArtifacts().filter(a=>a.name.startsWith(prefix)).sort((a,b)=>Number(b.name.split('-').pop())-Number(a.name.split('-').pop()));
  for(const a of old.slice(2))gh(['api','--method','DELETE',`repos/${repo}/actions/artifacts/${a.id}`]);
 }
 async function importPeer(){

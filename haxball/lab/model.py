@@ -11,6 +11,7 @@ class Policy(nn.Module):
 
     def __init__(self):
         super().__init__()
+        self.observation_revision='player-geometry-v2'
         self.ego = nn.Sequential(nn.Linear(EGO_DIM, 64), nn.Tanh(), nn.Linear(64, 64), nn.Tanh())
         self.entity = nn.Sequential(nn.Linear(ENTITY_DIM, 32), nn.Tanh(), nn.Linear(32, 32), nn.Tanh())
         self.query = nn.Linear(64, 32)
@@ -54,7 +55,9 @@ class Policy(nn.Module):
 def save_checkpoint(path, policy, optimizer=None, **metadata):
     from pathlib import Path
     path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {'schema': SCHEMA_VERSION, 'model': policy.state_dict(), **metadata}
+    import os
+    payload = {'schema': SCHEMA_VERSION, 'model': policy.state_dict(),'observation_revision':policy.observation_revision,
+               'code_revision':os.getenv('GITHUB_SHA','local-refinement'), **metadata}
     if optimizer is not None: payload['optimizer'] = optimizer.state_dict()
     tmp = path.with_suffix('.tmp'); torch.save(payload, tmp); tmp.replace(path)
 
@@ -68,4 +71,5 @@ def load_checkpoint(path, device='cpu'):
         obj['schema']=3;obj['migrated_from_schema']=2;obj.pop('optimizer',None)
     if obj.get('schema') != SCHEMA_VERSION: raise ValueError('checkpoint observation schema mismatch')
     model = Policy().to(device); model.load_state_dict(obj['model']); model.eval()
+    model.observation_revision=obj.get('observation_revision','ball-geometry-v1')
     return model, obj
