@@ -1,0 +1,60 @@
+name: NOTREIDEN HaxBall Training
+on:
+  push:
+    branches: ['haxball/train']
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: Training seconds per island (bounded by the task deadline)
+        default: '7200'
+      previous_run:
+        description: Optional previous training run for checkpoint resume
+        default: ''
+permissions:
+  contents: read
+  actions: write
+jobs:
+  island:
+    name: PPO island ${{ matrix.seed }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        seed: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    env:
+      RAYON_NUM_THREADS: '4'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+      HAXBALL_SEED: ${{ matrix.seed }}
+      HAXBALL_DURATION: ${{ inputs.duration || '7200' }}
+      HAXBALL_PREVIOUS_RUN: ${{ inputs.previous_run || '' }}
+      HAXBALL_DEADLINE: '2026-11-15T16:21:32Z'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            haxball
+            .github
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install CPU-only learner and native simulator
+        working-directory: haxball
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
+          npm ci --no-audit --no-fund
+      - name: Validate physics, policy contract, and regression gates
+        working-directory: haxball
+        run: |
+          python -m pytest -q
+          HAXBALL_PYTHON=python HAXBALL_CHECKPOINT=assets/bootstrap.pt node scripts/client_selftest.cjs
+      - name: Train, share opponents, and publish progress
+        uses: ./haxball

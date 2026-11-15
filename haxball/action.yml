@@ -1,0 +1,5 @@
+name: HaxBall autonomous training island
+description: Native PPO training with progress artifacts and a cross-runner checkpoint league
+runs:
+  using: node24
+  main: scripts/action-runner.cjs

@@ -1,0 +1,1 @@
+"""NOTREIDEN HaxBall training laboratory."""

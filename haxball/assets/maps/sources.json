@@ -1,0 +1,55 @@
+{
+  "futsal-bff-v3.hbs": {
+    "source": "https://github.com/HaxballGym/HaxballGym/blob/master/haxballgym/haxballgym/stadiums/futsal-classic.hbs",
+    "package": "haxballgym==1.0.1",
+    "sha256": "1a0a44802153866a792effe37c0f409d8f0783917995ee37962311468e2107aa",
+    "variant": "BFF Classic v3",
+    "radius": 5.8,
+    "ball_bounce": 0.412,
+    "ball_inv_mass": 1.55,
+    "kick_strength": 4.2,
+    "kick_impulse": 6.51
+  },
+  "futsal-1v1.hbs": {
+    "source": "https://github.com/xdaruis/haxball-headless-room-bot/blob/master/stadiums/Futsal1x1.hbs",
+    "physics": "source repository physics.json overlay",
+    "license": "MIT",
+    "generated": false,
+    "sha256": "002fbc12c6f5aae9b636862ce2aa0760e34b2db4daddc9189a401f73ae3707d1"
+  },
+  "futsal-2v2.hbs": {
+    "source": "https://github.com/xdaruis/haxball-headless-room-bot/blob/master/stadiums/Futsal2x2.hbs",
+    "physics": "source repository physics.json overlay",
+    "license": "MIT",
+    "generated": false,
+    "sha256": "7bbcdad5eec5944947699ed0685c4ce702ce7e9cecc56a0d859afd8532a01053"
+  },
+  "futsal-3v3.hbs": {
+    "source": "https://github.com/xdaruis/haxball-headless-room-bot/blob/master/stadiums/Futsal3x3.hbs",
+    "physics": "source repository physics.json overlay",
+    "license": "MIT",
+    "generated": false,
+    "sha256": "48b2fc4147175973f1366c069cd1a08465c5ee8daf0bfc5c7e4de04200209198"
+  },
+  "futsal-5v5-training.hbs": {
+    "source": "futsal-3v3.hbs",
+    "generated": true,
+    "geometry_scale": 1.3,
+    "physics": "unscaled source default physics, ball/player radii preserved",
+    "sha256": "e2e11241ee8b58347a3db17812149249aaf090e3496c854dd9797507c3d2c157"
+  },
+  "futsal-8v8-training.hbs": {
+    "source": "futsal-3v3.hbs",
+    "generated": true,
+    "geometry_scale": 1.8,
+    "physics": "unscaled source default physics, ball/player radii preserved",
+    "sha256": "f8a8f5d7d3a0c52830bbb72b0573914ed975aceff44f5b07633aed3aeb55f70b"
+  },
+  "futsal-12v12-training.hbs": {
+    "source": "futsal-3v3.hbs",
+    "generated": true,
+    "geometry_scale": 2.2,
+    "physics": "unscaled source default physics, ball/player radii preserved",
+    "sha256": "af5ea1e5dfcb7c0187c20cea0bd12d7f044448824fc0d9ba407ca613e0628c3e"
+  }
+}

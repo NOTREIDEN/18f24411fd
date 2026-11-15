@@ -1,8 +1,5 @@
 name: NOTREIDEN HaxBall Lab
 on:
-  push:
-    branches: ['haxball/**']
-    paths: ['haxball/**', '.github/workflows/haxball.yml']
   workflow_dispatch:
 permissions:
   contents: read
