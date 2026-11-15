@@ -1,0 +1,5 @@
+numpy>=2.1,<3
+haxball-core==1.0.0
+haxballgym==1.0.1
+pillow>=11,<14
+pytest>=8,<10

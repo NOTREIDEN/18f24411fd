@@ -1,0 +1,43 @@
+name: NOTREIDEN HaxBall Lab
+on:
+  push:
+    branches: ['haxball/**']
+    paths: ['haxball/**', '.github/workflows/haxball.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capacity:
+    name: Native capacity / ${{ matrix.seed }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        seed: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    env:
+      RAYON_NUM_THREADS: '4'
+      OMP_NUM_THREADS: '1'
+      OPENBLAS_NUM_THREADS: '1'
+    defaults:
+      run:
+        working-directory: haxball
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            haxball
+            .github
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest -q tests/test_physics.py
+      - run: python scripts/system_probe.py --seed ${{ matrix.seed }} --output reports/probe-${{ matrix.seed }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capacity-${{ matrix.seed }}
+          path: haxball/reports/*.json
+          retention-days: 1

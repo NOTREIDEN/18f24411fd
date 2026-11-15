@@ -1,0 +1,1 @@
+{"name":"notreiden-haxball-lab","version":"0.1.0","private":true,"description":"HaxBall simulation, self-play training and real-room player","scripts":{"test":"node --test tests/*.test.cjs","probe":"node scripts/probe.cjs","benchmark":"node scripts/benchmark.cjs"},"dependencies":{"node-haxball":"2.3.1","json5":"2.2.3","pako":"2.1.0"}}
